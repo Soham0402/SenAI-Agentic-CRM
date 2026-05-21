@@ -1,0 +1,38 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "SenAI Agentic CRM Platform Core API",
+    "version": "1.0.0",
+    "description": "Production-grade automated triage engine using multi-layered heuristic sorting and Gemini-powered ReAct execution loops."
+  },
+  "paths": {
+    "/api/ingest": {
+      "post": {
+        "summary": "Ingest A New Email Transmission",
+        "description": "Validates schema structures synchronously, checks message idempotency, and runs Layer 1 heuristic filters.",
+        "responses": {
+          "201": { "description": "Payload processed successfully." },
+          "400": { "description": "Malformed structural content detected." }
+        }
+      }
+    },
+    "/api/process/{email_id}": {
+      "post": {
+        "summary": "Execute Layer 2 LLM Classification",
+        "description": "Calls Gemini to output structured entity metadata, sentiment vectors, and conditional RAG context injections.",
+        "responses": {
+          "200": { "description": "Data classification parsed and persisted." }
+        }
+      }
+    },
+    "/api/agent/run/{email_id}": {
+      "post": {
+        "summary": "Run Autonomous Triage Loop",
+        "description": "Triggers the ReAct agent framework loop to match internal workflows, open system tickets, or route legal flags.",
+        "responses": {
+          "200": { "description": "Agent loop execution sequence resolved safely." }
+        }
+      }
+    }
+  }
+}
