@@ -8,6 +8,7 @@ import models
 import schemas
 from heuristics import run_heuristic_filter
 from rag import retrieve_relevant_context
+from classifier import analyze_and_classify_email
 
 app = FastAPI(title="SenAI Agentic CRM Platform")
 
@@ -119,4 +120,20 @@ def ingest_email(payload: schemas.EmailIngestIn, db: Session = Depends(get_db)):
         "status": "processing" if not h_results["is_spam"] else "ignored",
         "reason": "Queued for LLM Processing Layer" if not h_results["is_spam"] else "Filtered out by System Heuristics",
         "job_id": f"job_{payload.message_id}"
+    }
+
+@app.post("/api/process/{email_id}")
+def process_email_intelligence(email_id: int, db: Session = Depends(get_db)):
+    """
+    Processes an ingested email through Layer 2 LLM parsing and updates
+    structural entities along with web intelligence data.
+    """
+    classification = analyze_and_classify_email(email_id, db)
+    if "error" in classification:
+        raise HTTPException(status_code=404, detail=classification["error"])
+        
+    return {
+        "status": "success",
+        "email_id": email_id,
+        "analysis_results": classification
     }
