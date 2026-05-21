@@ -9,6 +9,7 @@ import schemas
 from heuristics import run_heuristic_filter
 from rag import retrieve_relevant_context
 from classifier import analyze_and_classify_email
+from agent import execute_agent_triage
 
 app = FastAPI(title="SenAI Agentic CRM Platform")
 
@@ -137,3 +138,25 @@ def process_email_intelligence(email_id: int, db: Session = Depends(get_db)):
         "email_id": email_id,
         "analysis_results": classification
     }
+
+@app.post("/api/agent/run/{email_id}")
+def run_autonomous_agent(email_id: int, db: Session = Depends(get_db)):
+    """
+    Triggers the multi-step autonomous agent loop to process reasoning actions, 
+    hit RAG tables, map tickets, and resolve workflows.
+    """
+    result = execute_agent_triage(email_id, db, dry_run=False)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.post("/agent/dry-run/{email_id}")
+def run_agent_dry_mode(email_id: int, db: Session = Depends(get_db)):
+    """
+    Runs the agent in dry-run planning mode. Returns the reasoning trace logs
+    without writing downstream production tracking updates or tickets.
+    """
+    result = execute_agent_triage(email_id, db, dry_run=True)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
