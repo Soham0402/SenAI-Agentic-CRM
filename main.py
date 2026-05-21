@@ -7,8 +7,21 @@ from database import get_db
 import models
 import schemas
 from heuristics import run_heuristic_filter
+from rag import retrieve_relevant_context
 
 app = FastAPI(title="SenAI Agentic CRM Platform")
+
+@app.get("/rag/search")
+def debug_rag_search(q: str, db: Session = Depends(get_db)):
+    """
+    Debug endpoint: Interrogate internal documentation directly to verify 
+    vector retrieval accuracy and distance scores.
+    """
+    if not q:
+        raise HTTPException(status_code=400, detail="Query parameter 'q' cannot be empty.")
+        
+    hits = retrieve_relevant_context(q, db, limit=3)
+    return {"query": q, "results": hits}
 
 @app.post("/api/ingest", status_code=status.HTTP_201_CREATED)
 def ingest_email(payload: schemas.EmailIngestIn, db: Session = Depends(get_db)):
