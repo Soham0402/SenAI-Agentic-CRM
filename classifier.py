@@ -95,9 +95,9 @@ def analyze_and_classify_email(email_id: int, db: Session) -> dict:
     - If drafting a response ('suggested_reply'), you MUST explicitly cite your source document from the RAG parameters provided.
     """
 
-    # 5. Execute Gemini Call structured via JSON specifications
+    # Change model='gemini-1.5-pro' to 'gemini-2.5-flash'
     response = client.models.generate_content(
-        model='gemini-1.5-pro',
+        model='gemini-2.5-flash',
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",

@@ -36,14 +36,15 @@ def retrieve_relevant_context(
 
     query_vector = get_query_embedding(query)
 
+    # Replaced :vector::vector with CAST(:vector AS vector) to prevent SQLAlchemy parsing errors
     sql_query = text("""
         SELECT
             id,
             source_doc,
             chunk_text,
-            (1 - (embedding <=> :vector::vector)) AS similarity
+            (1 - (embedding <=> CAST(:vector AS vector))) AS similarity
         FROM knowledge_chunks
-        ORDER BY embedding <=> :vector::vector
+        ORDER BY embedding <=> CAST(:vector AS vector)
         LIMIT :limit
     """)
 

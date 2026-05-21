@@ -47,7 +47,7 @@ with tab_inbox:
     )
     
     if st.button("Query Contact Threads Queue"):
-        st.experimental_rerun()
+        st.rerun()
 
 # ---------------------------------------------------------
 # VIEW 2: THREAD WORKSPACE (Detail Interaction Pane)

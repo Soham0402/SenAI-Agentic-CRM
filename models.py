@@ -72,7 +72,7 @@ class KnowledgeChunk(Base):
     id = Column(Integer, primary_key=True, index=True)
     source_doc = Column(String)
     chunk_text = Column(Text)
-    embedding = Column(Vector(768)) # Dimension size for Gemini embeddings
+    embedding = Column(Vector(3072))
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class WebIntelligenceCache(Base):

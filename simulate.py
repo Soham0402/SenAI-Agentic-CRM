@@ -3,7 +3,7 @@ import json
 import time
 import requests
 
-DATASET_PATH = "SenAI-Agentic-CRM/email-data-advanced.json"
+DATASET_PATH = "email-data-advanced.json"
 INGEST_URL = "http://127.0.0.1:8000/api/ingest"
 PROCESS_URL = "http://127.0.0.1:8000/api/process"
 AGENT_URL = "http://127.0.0.1:8000/api/agent/run"
@@ -43,18 +43,25 @@ def execute_streaming_simulation(delay_seconds: float = 1.0):
             if resp_json["status"] == "ignored":
                 continue
 
-            # In an actual deployment, database IDs match sequentially. 
-            # We assume a 1-to-1 matching mapping here for local operational testing loops.
-            mock_db_id = idx + 1 
+            # FIX: Grab the actual database ID returned from our patched backend
+            actual_db_id = resp_json.get("email_id")
+            if not actual_db_id:
+                print("⚠️ Error: No database ID returned for processing.")
+                continue
             
             # Step B: Fire Layer 2 Structured Classification Tasks
-            print(f"➔ Triggering Layer 2 LLM Structure Mapping for ID {mock_db_id}...")
-            class_resp = requests.post(f"{PROCESS_URL}/{mock_db_id}")
+            print(f"➔ Triggering Layer 2 LLM Structure Mapping for ID {actual_db_id}...")
+            class_resp = requests.post(f"{PROCESS_URL}/{actual_db_id}")
             
             # Step C: Trigger Autonomous Triage Agent ReAct Execution Loops
             print(f"➔ Spawning Autonomous Triage Agent loop processing lanes...")
-            agent_resp = requests.post(f"{AGENT_URL}/{mock_db_id}")
-            print(f"➔ Agent Status Output: {agent_resp.json().get('final_action_taken')}")
+            agent_resp = requests.post(f"{AGENT_URL}/{actual_db_id}")
+            
+            # FIX: Safely parse JSON to prevent decoding crashes if the server throws an error
+            if agent_resp.status_code == 200:
+                print(f"➔ Agent Status Output: {agent_resp.json().get('final_action_taken')}")
+            else:
+                print(f"❌ Agent Error Response: {agent_resp.text}")
 
         except Exception as network_error:
             print(f"💥 Operational disruption on network line paths: {network_error}")

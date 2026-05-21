@@ -81,7 +81,7 @@ def execute_agent_triage(email_id: int, db: Session, dry_run: bool = False) -> d
         """
 
         response = client.models.generate_content(
-            model='gemini-1.5-pro',
+            model='gemini-2.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(temperature=0.0)
         )

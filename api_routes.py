@@ -9,7 +9,7 @@ from bonus_features import generate_thread_summary, calculate_dynamic_churn_risk
 
 router = APIRouter()
 
-@app.get("/dashboard/stats")
+@router.get("/dashboard/stats")
 def get_dashboard_metrics(db: Session = Depends(get_db)):
     """Surfaces count matrices for core application state overview badges."""
     pending = db.query(models.Email).filter(models.Email.status == "Received").count()
@@ -26,7 +26,7 @@ def get_dashboard_metrics(db: Session = Depends(get_db)):
         "spam_filtered": spam
     }
 
-@app.get("/threads/{contact_email}")
+@router.get("/threads/{contact_email}")
 def fetch_complete_thread_workspace(contact_email: str, db: Session = Depends(get_db)):
     """Returns chronological conversation rows with actions and summaries."""
     threads = db.query(models.Thread).filter(models.Thread.sender_email == contact_email).all()
@@ -43,6 +43,7 @@ def fetch_complete_thread_workspace(contact_email: str, db: Session = Depends(ge
             action = db.query(models.Action).filter(models.Action.email_id == e.id).first()
             email_data.append({
                 "id": e.id,
+                "sender": e.sender,  # <--- ADD THIS LINE
                 "subject": e.subject,
                 "body": e.body,
                 "timestamp": e.timestamp,
@@ -65,7 +66,7 @@ def fetch_complete_thread_workspace(contact_email: str, db: Session = Depends(ge
         
     return response_payload
 
-@app.patch("/drafts/{action_id}")
+@router.patch("/drafts/{action_id}")
 def edit_proposed_draft_reply(action_id: int, new_content: dict, db: Session = Depends(get_db)):
     """
     Bonus Feature 3: Implements a Human-in-the-Loop tracking model.
@@ -99,7 +100,7 @@ def edit_proposed_draft_reply(action_id: int, new_content: dict, db: Session = D
     db.commit()
     return {"status": "success", "message": "Draft payload updated and modifications logged."}
 
-@app.get("/analytics/sentiment-trend")
+@router.get("/analytics/sentiment-trend")
 def query_sentiment_trends(sender: str = None, db: Session = Depends(get_db)):
     """Generates time-series moving averages mapping client sentiment stability over time."""
     query = db.query(models.Email.timestamp, models.Email.sentiment_score).filter(models.Email.sentiment_score.isnot(None))
@@ -108,3 +109,40 @@ def query_sentiment_trends(sender: str = None, db: Session = Depends(get_db)):
         
     results = query.order_by(models.Email.timestamp.asc()).all()
     return [{"timestamp": r[0].isoformat(), "sentiment_score": r[1]} for r in results]
+
+@router.get("/analytics/category-breakdown")
+def get_category_breakdown(db: Session = Depends(get_db)):
+    """Analytics: Category distribution."""
+    results = db.query(models.Email.category, func.count(models.Email.id)).group_by(models.Email.category).all()
+    return {category: count for category, count in results}
+
+@router.get("/audit/{entity_type}/{entity_id}")
+def get_audit_history(entity_type: str, entity_id: str, db: Session = Depends(get_db)):
+    """Fetches full audit history for any entity."""
+    logs = db.query(models.AuditLog).filter(models.AuditLog.entity_type == entity_type, models.AuditLog.entity_id == entity_id).all()
+    return logs
+
+@router.get("/contacts/{email}")
+def get_contact_profile_api(email: str, db: Session = Depends(get_db)):
+    """Fetches Contact profile."""
+    contact = db.query(models.Contact).filter(models.Contact.email == email).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return contact
+
+@router.patch("/contacts/{email}/status")
+def update_contact_status(email: str, status_update: dict, db: Session = Depends(get_db)):
+    """Updates contact status (VIP, Blocked, etc.)."""
+    contact = db.query(models.Contact).filter(models.Contact.email == email).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    contact.status = status_update.get("status", contact.status)
+    db.commit()
+    return {"message": f"Status updated to {contact.status}"}
+    
+@router.get("/intelligence/reputation")
+def get_reputation(company_name: str, db: Session = Depends(get_db)):
+    """Latest scraped public sentiment for company."""
+    # Assuming fetch_web_intelligence is imported from scraper
+    from scraper import fetch_web_intelligence
+    return fetch_web_intelligence(company_name, db)

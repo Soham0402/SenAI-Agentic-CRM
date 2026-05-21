@@ -31,7 +31,7 @@ def generate_thread_summary(thread_id: str, db: Session) -> str:
     """
     
     response = client.models.generate_content(
-        model='gemini-1.5-pro',
+        model='gemini-2.5-flash', 
         contents=prompt,
         config=types.GenerateContentConfig(temperature=0.2)
     )
