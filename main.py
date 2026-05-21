@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 import html
-
+import api_routes
 from database import get_db
 import models
 import schemas
@@ -12,6 +12,7 @@ from classifier import analyze_and_classify_email
 from agent import execute_agent_triage
 
 app = FastAPI(title="SenAI Agentic CRM Platform")
+app.include_router(api_routes.router)
 
 @app.get("/rag/search")
 def debug_rag_search(q: str, db: Session = Depends(get_db)):
